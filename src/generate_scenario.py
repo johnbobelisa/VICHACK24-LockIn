@@ -15,44 +15,49 @@ def generate_scenario(json_input: str):
     lecture_title = data['lecture_title']
     topics = data['topics']
 
-    # Summarize each topic and combine into a single script
-    combined_summary = " ".join([topic['summary'] for topic in topics])
-    print("Combined Summary:")
-    print(combined_summary)
-
-    word_limit = 120
+    word_limit = 120  # Set a word limit for each topic's script
 
     # Create the OpenAI client
     client = OpenAI(api_key=openai_api_key)
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
+    # Process each topic individually
+    for topic in topics:
+        topic_title = topic['topic']
+        topic_summary = topic['summary']
+
+        try:
+            # Generate script for each topic
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": f"Lecture on {lecture_title}. {combined_summary} Limit the script to no more than {word_limit} words. Please frequently link/add your teaching with funny Gen-Z jokes."}
+                {"role": "user", "content": f"Create a 60-second script for a narrator based on the topic '{topic_title}' and its summary: {topic_summary}. Please include some Gen-Z jokes to make it engaging. The script must only contain the text for the narrator to speak, without any background instructions, music cues, or scene descriptions. Focus solely on the CONTENT and what the narrator will say to the audience."}
             ],
-            max_tokens=word_limit,
-            temperature=0.5,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
-        )
+                max_tokens=word_limit,
+                temperature=0.5,
+                top_p=1.0,
+                frequency_penalty=0.0,
+                presence_penalty=0.0
+            )
 
-        script = response.choices[0].message.content.strip()
+            script = response.choices[0].message.content.strip()
 
-        # Ensure the generated script is within the word limit
-        words = script.split()
-        if len(words) > word_limit:
-            script = ' '.join(words[:word_limit])
+            # Ensure the generated script is within the word limit
+            words = script.split()
+            if len(words) > word_limit:
+                script = ' '.join(words[:word_limit])
 
-        output_json = {
-            "lecture_title": lecture_title,
-            "script": script
-        }
+            # Add the script to the topic
+            topic['script'] = script
 
-        return json.dumps(output_json, indent=2)
+        except Exception as e:
+            print(f"Error generating script for topic '{topic_title}':", e)
+            topic['script'] = "Error generating script."
 
-    except Exception as e:
-        print(e)
-        return None
+    # Create the output JSON structure
+    output_json = {
+        "lecture_title": lecture_title,
+        "topics": topics
+    }
+
+    return json.dumps(output_json, indent=2)
