@@ -1,91 +1,58 @@
-import requests
 import json
 from dotenv import load_dotenv
 import os
-from summarize_transcript import summarize
 from openai import OpenAI
-from datetime import datetime
 
 # Load environment variables
 load_dotenv()
 
 # Get API keys from environment variables
 openai_api_key = os.getenv("OPEN_API_KEY")
-elevenlabs_api_key = os.getenv("ELVEN_LABS_API_KEY3")
-
-# Function to create a unique filename based on the current timestamp
-def create_unique_filename(base_path, filename):
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")  # Generates a timestamp
-    unique_filename = f"{filename}_{timestamp}.mp3"  # Appends timestamp to the filename
-    return os.path.join(base_path, unique_filename)
 
 # Function to generate scenarios using OpenAI API
-def generate_scenario(transcript):
-    summary = summarize(transcript)
-    print("Transcript Summary:")
-    print(summary)
+def generate_scenario(json_input: str):
+    data = json.loads(json_input)
+    lecture_title = data['lecture_title']
+    topics = data['topics']
+
+    # Summarize each topic and combine into a single script
+    combined_summary = " ".join([topic['summary'] for topic in topics])
+    print("Combined Summary:")
+    print(combined_summary)
 
     word_limit = 120
 
+    # Create the OpenAI client
     client = OpenAI(api_key=openai_api_key)
-
-    tools = [
-        {
-            "name": "get_scenes",
-            "description": "Get the scenes for an audio script without scene descriptions",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "scenes": {
-                        "type": "array",
-                        "description": "The scenes for the audio script",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "id": {"type": "integer"},
-                                "script": {"type": "string", "description": "The script for the scene. MUST include only the text that will be spoken by the narrator"},
-                            },
-                        },
-                    },
-                },
-            },
-        }
-    ]
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an educational influencer and lecturer. Please frequently use Gen-Z slang."
-                        "Your goal is to ensure that your viewers thoroughly understand the given topic. "
-                        "Provide clear explanations and use simple examples to illustrate complex ideas. "
-                        "Engage the audience by explaining concepts in an easily digestible manner, "
-                        "focusing on clarity and understanding. Limit the script to no more than "
-                        f"{word_limit} words to ensure it fits within a 1-minute audio duration."
-                    )
-                },
-                {"role": "user", "content": f"Transcript Summary: {summary}"},
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": f"Lecture on {lecture_title}. {combined_summary} Limit the script to no more than {word_limit} words. Please frequently link/add your teaching with funny Gen-Z jokes."}
             ],
-            functions=tools,
-            function_call={
-                "name": "get_scenes",
-            },
+            max_tokens=word_limit,
+            temperature=0.5,
+            top_p=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0
         )
-        # Loading the response as a JSON object
-        json_response = json.loads(response.choices[0].message.function_call.arguments)
 
-        # Ensure each scene script is within the word limit
-        for scene in json_response['scenes']:
-            scene_script = scene['script']
-            words = scene_script.split()
-            if len(words) > word_limit:
-                scene['script'] = ' '.join(words[:word_limit])
-        
-        return response.choices[0].message.function_call.arguments
+        script = response.choices[0].message.content.strip()
+
+        # Ensure the generated script is within the word limit
+        words = script.split()
+        if len(words) > word_limit:
+            script = ' '.join(words[:word_limit])
+
+        output_json = {
+            "lecture_title": lecture_title,
+            "script": script
+        }
+
+        return json.dumps(output_json, indent=2)
+
     except Exception as e:
         print(e)
         return None
-
