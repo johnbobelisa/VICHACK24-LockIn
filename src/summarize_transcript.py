@@ -2,7 +2,7 @@ import json
 from summarizer import Summarizer
 
 def summarize(json_input: str):
-    # Load the JSON data from string
+    # Load the JSON data from the string
     data = json.loads(json_input)
     
     # Create and configure the summarization model
@@ -25,9 +25,13 @@ def summarize(json_input: str):
             result = model(transcript_text, ratio=ratio)
             summary = ''.join(result)
 
+        # Extract or create a 5-word topic from the summary
+        topic_words = summary.split()[:5]
+        topic = ' '.join(topic_words)
+
         # Append the summarized data to topics
         topics.append({
-            "topic": f"Topic related to {entry['start_time']} - {entry['end_time']}",
+            "topic": topic,
             "start_time": entry['start_time'],
             "end_time": entry['end_time'],
             "summary": summary
@@ -40,4 +44,3 @@ def summarize(json_input: str):
     }
 
     return json.dumps(output_json, indent=2)
-
