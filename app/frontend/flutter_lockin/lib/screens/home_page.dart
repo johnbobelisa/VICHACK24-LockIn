@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'personalization_page.dart'; // Import the PersonalizationPage
+
 
 class HomePage extends StatefulWidget {
   @override
@@ -21,7 +23,20 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIndex = index;
     });
+
+    if (index == 4) {
+      // Navigate to the PersonalizationPage when "Communities" is selected
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PersonalizationPage()),
+      );
+    } else if (index == 0) {
+      // If you're navigating back to the HomePage, simply pop the context
+      Navigator.pop(context);
+    }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
