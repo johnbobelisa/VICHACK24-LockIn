@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'communities_page.dart';
 import 'personalization_page.dart';
-
+import 'notifications_page.dart';
 class ContentCreationPage extends StatefulWidget {
   @override
   ContentCreationPageState createState() => ContentCreationPageState();
@@ -30,6 +30,11 @@ class ContentCreationPageState extends State<ContentCreationPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => PersonalizationPage()),
+      );
+    } else if (index == 3) {
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => NotificationsPage())
       );
     }
   }

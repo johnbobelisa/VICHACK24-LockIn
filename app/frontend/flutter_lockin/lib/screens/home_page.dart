@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'personalization_page.dart'; // Import the PersonalizationPage
 import 'communities_page.dart';
 import 'create_content.dart';
+import 'notifications_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -42,6 +43,11 @@ class _HomePageState extends State<HomePage> {
           context,
           MaterialPageRoute(builder: (context) => ContentCreationPage())
       );
+    } else if (index == 3) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => NotificationsPage())
+      );
     }
   }
 
@@ -61,7 +67,7 @@ class _HomePageState extends State<HomePage> {
             ),
             SizedBox(width: 8),
             Text(
-              'LockIns',
+              'LockIn',
               style: TextStyle(
                 fontFamily: 'Roboto',
                 color: Colors.white,

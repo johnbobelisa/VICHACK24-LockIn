@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart'; // Import the HomePage
+import 'notifications_page.dart';
+import 'communities_page.dart';
+import 'create_content.dart';
 
 class PersonalizationPage extends StatefulWidget {
   @override
@@ -20,9 +23,23 @@ class PersonalizationPageState extends State<PersonalizationPage> {
         context,
         MaterialPageRoute(builder: (context) => HomePage()),
       );
-    } else if (index == 4) {
-      // Navigate to the Profile page or any other page you have
-      // For now, let's assume we're on PersonalizationPage for the "Communities"
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => CommunitiesPage()),
+      );
+    }
+    else if (index == 2) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ContentCreationPage()),
+      );
+    }
+    else if (index == 3) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => NotificationsPage()),
+      );
     }
   }
 
