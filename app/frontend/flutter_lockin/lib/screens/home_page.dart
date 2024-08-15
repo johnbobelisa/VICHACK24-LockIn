@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'personalization_page.dart'; // Import the PersonalizationPage
+import 'communities_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -25,14 +26,16 @@ class _HomePageState extends State<HomePage> {
     });
 
     if (index == 4) {
-      // Navigate to the PersonalizationPage when "Communities" is selected
+      // Navigate to the PersonalizationPage when "personal icon" is selected
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => PersonalizationPage()),
       );
-    } else if (index == 0) {
-      // If you're navigating back to the HomePage, simply pop the context
-      Navigator.pop(context);
+    } else if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => CommunitiesPage())
+      );
     }
   }
 
@@ -161,7 +164,7 @@ class CustomSearchDelegate extends SearchDelegate {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back),
+      icon: Icon(Icons.arrow_back, color: Colors.white,),
       onPressed: () {
         close(context, null);
       },

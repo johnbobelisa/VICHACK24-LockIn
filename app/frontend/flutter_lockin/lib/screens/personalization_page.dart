@@ -1,6 +1,31 @@
 import 'package:flutter/material.dart';
+import 'home_page.dart'; // Import the HomePage
 
-class PersonalizationPage extends StatelessWidget {
+class PersonalizationPage extends StatefulWidget {
+  @override
+  PersonalizationPageState createState() => PersonalizationPageState();
+}
+
+class PersonalizationPageState extends State<PersonalizationPage> {
+  int _selectedIndex = 4; // Start with personalization selected
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 0) {
+      // Navigate back to HomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
+    } else if (index == 4) {
+      // Navigate to the Profile page or any other page you have
+      // For now, let's assume we're on PersonalizationPage for the "Communities"
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,11 +195,12 @@ class PersonalizationPage extends StatelessWidget {
             label: '',
           ),
         ],
-        currentIndex: 0,
+        currentIndex: _selectedIndex,
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
         backgroundColor: Color(0xFF1e3a8a),
         type: BottomNavigationBarType.fixed,
+        onTap: _onItemTapped, // Call the updated navigation method
       ),
     );
   }
