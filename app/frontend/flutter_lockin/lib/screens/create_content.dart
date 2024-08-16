@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'communities_page.dart';
 import 'personalization_page.dart';
 import 'notifications_page.dart';
+
 class ContentCreationPage extends StatefulWidget {
   @override
   ContentCreationPageState createState() => ContentCreationPageState();
@@ -10,6 +15,37 @@ class ContentCreationPage extends StatefulWidget {
 
 class ContentCreationPageState extends State<ContentCreationPage> {
   int _selectedIndex = 2; // Start with Content Creation selected
+
+  Future<void> _uploadVideo() async {
+    // Let the user pick a file
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.video,
+    );
+
+    if (result != null) {
+      // Get the file path
+      String filePath = result.files.single.path!;
+
+      // Create a storage reference
+      FirebaseStorage storage = FirebaseStorage.instance;
+      Reference ref = storage.ref().child('videos/${DateTime.now().millisecondsSinceEpoch}.mp4');
+
+      // Upload the file to Firebase
+      UploadTask uploadTask = ref.putFile(File(filePath));
+
+      // Monitor the upload progress
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        print('Progress: ${(snapshot.bytesTransferred / snapshot.totalBytes) * 100} %');
+      });
+
+      // Wait for the upload to complete
+      TaskSnapshot taskSnapshot = await uploadTask;
+
+      // Get the download URL of the uploaded video
+      String downloadURL = await taskSnapshot.ref.getDownloadURL();
+      print('Video URL: $downloadURL');
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -112,9 +148,7 @@ class ContentCreationPageState extends State<ContentCreationPage> {
                       ),
                       SizedBox(height: 10),
                       ElevatedButton(
-                        onPressed: () {
-                          // Handle Lecture Video Upload
-                        },
+                        onPressed: _uploadVideo, // Handle Lecture Video Upload
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF1e3a8a),
                           shape: RoundedRectangleBorder(
@@ -177,9 +211,7 @@ class ContentCreationPageState extends State<ContentCreationPage> {
               ),
               SizedBox(height: 60),
               ElevatedButton(
-                onPressed: () {
-                  // Handle Upload Video
-                },
+                onPressed: _uploadVideo, // Handle Upload Video
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF1e3a8a),
                   shape: RoundedRectangleBorder(

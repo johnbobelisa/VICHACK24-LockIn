@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'screens/login_page.dart'; // Import the LoginPage
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();  // Ensures that all bindings are initialized before the app starts
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(MyApp());
 }
 

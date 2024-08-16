@@ -3,7 +3,7 @@ import 'personalization_page.dart'; // Import the PersonalizationPage
 import 'communities_page.dart';
 import 'create_content.dart';
 import 'notifications_page.dart';
-
+import 'package:video_player/video_player.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -12,6 +12,50 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideoPlayer();
+  }
+
+  Future<void> _initializeVideoPlayer() async {
+    try {
+      String videoUrl = await _fetchVideoUrlFromFirebase();
+
+      _controller = VideoPlayerController.networkUrl(
+        Uri.parse(videoUrl),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+
+      await _controller.initialize().then((_) {
+        setState(() {
+          _isInitialized = true;
+        });
+        _controller.setLooping(true);
+        _controller.play();
+      });
+
+    } catch (e) {
+      setState(() {
+        _isInitialized = false;
+      });
+    }
+  }
+
+
+  Future<String> _fetchVideoUrlFromFirebase() async {
+    // Placeholder URL for now. Ensure this URL is valid and points to a video file.
+    return 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   static const List<Widget> _widgetOptions = <Widget>[
     // Your actual pages or widgets go here. I'm using placeholders for now.
@@ -50,8 +94,6 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -93,11 +135,15 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.network(
-              'https://www.universityworldnews.com/images/articles/20240220134437155_5.jpg', // Replace with your image URL
-              fit: BoxFit.cover,
+          _isInitialized && _controller.value.isInitialized
+              ? Positioned.fill(
+            child: AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: VideoPlayer(_controller),
             ),
+          )
+              : Center(
+            child: CircularProgressIndicator(),
           ),
           Positioned(
             bottom: 20,
@@ -176,7 +222,7 @@ class CustomSearchDelegate extends SearchDelegate {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back, color: Colors.white,),
+      icon: Icon(Icons.arrow_back),
       onPressed: () {
         close(context, null);
       },

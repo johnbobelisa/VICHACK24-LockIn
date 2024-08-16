@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "672587067478",
+    "project_id": "lockin-66341",
+    "storage_bucket": "lockin-66341.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:672587067478:android:855e3ec1bed83163888bf7",
+        "android_client_info": {
+          "package_name": "com.example.flutter_lockin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjACQgPXr2odsWyTlOOb6aS7FQYwy_pO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
