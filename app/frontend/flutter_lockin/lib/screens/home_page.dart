@@ -4,6 +4,8 @@ import 'communities_page.dart';
 import 'create_content.dart';
 import 'notifications_page.dart';
 import 'package:video_player/video_player.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:math';
 
 class HomePage extends StatefulWidget {
   @override
@@ -23,7 +25,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _initializeVideoPlayer() async {
     try {
-      String videoUrl = await _fetchVideoUrlFromFirebase();
+      String videoUrl = await _fetchRandomVideoUrlFromFirebase();
 
       _controller = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
@@ -45,10 +47,27 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<String> _fetchRandomVideoUrlFromFirebase() async {
+    // Get a reference to the videos/final directory in Firebase Storage
+    FirebaseStorage storage = FirebaseStorage.instance;
+    Reference ref = storage.ref().child('videos/final');
 
-  Future<String> _fetchVideoUrlFromFirebase() async {
-    // Placeholder URL for now. Ensure this URL is valid and points to a video file.
-    return 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+    // List all items (videos) in the directory
+    ListResult result = await ref.listAll();
+    List<Reference> allVideos = result.items;
+
+    if (allVideos.isEmpty) {
+      throw Exception('No videos found in the "videos/final" directory.');
+    }
+
+    // Pick a random video from the list
+    Random random = Random();
+    int randomIndex = random.nextInt(allVideos.length);
+    Reference randomVideoRef = allVideos[randomIndex];
+
+    // Get the download URL for the selected video
+    String videoUrl = await randomVideoRef.getDownloadURL();
+    return videoUrl;
   }
 
   @override
@@ -79,8 +98,8 @@ class _HomePageState extends State<HomePage> {
       );
     } else if (index == 1) {
       Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => CommunitiesPage())
+          context,
+          MaterialPageRoute(builder: (context) => CommunitiesPage())
       );
     } else if (index == 2) {
       Navigator.push(
