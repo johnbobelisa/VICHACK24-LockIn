@@ -5,7 +5,6 @@ import 'create_content.dart';
 import 'notifications_page.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:math';
 
 class HomePage extends StatefulWidget {
   @override
@@ -14,76 +13,43 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  late VideoPlayerController _controller;
-  bool _isInitialized = false;
+  List<String> videoUrls = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideoPlayer();
+    _fetchVideoUrlsFromFirebase();
   }
 
-  Future<void> _initializeVideoPlayer() async {
+  Future<void> _fetchVideoUrlsFromFirebase() async {
     try {
-      String videoUrl = await _fetchRandomVideoUrlFromFirebase();
+      // Get a reference to the videos/final directory in Firebase Storage
+      FirebaseStorage storage = FirebaseStorage.instance;
+      Reference ref = storage.ref().child('videos/final');
 
-      _controller = VideoPlayerController.networkUrl(
-        Uri.parse(videoUrl),
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-      );
+      // List all items (videos) in the directory
+      ListResult result = await ref.listAll();
+      List<Reference> allVideos = result.items;
 
-      await _controller.initialize().then((_) {
-        setState(() {
-          _isInitialized = true;
-        });
-        _controller.setLooping(true);
-        _controller.play();
+      if (allVideos.isEmpty) {
+        throw Exception('No videos found in the "videos/final" directory.');
+      }
+
+      // Get the download URLs for all videos
+      List<String> urls = await Future.wait(allVideos.map((video) => video.getDownloadURL()).toList());
+
+      setState(() {
+        videoUrls = urls;
+        _isLoading = false;
       });
-
     } catch (e) {
       setState(() {
-        _isInitialized = false;
+        _isLoading = false;
       });
+      print("Error fetching videos: $e");
     }
   }
-
-  Future<String> _fetchRandomVideoUrlFromFirebase() async {
-    // Get a reference to the videos/final directory in Firebase Storage
-    FirebaseStorage storage = FirebaseStorage.instance;
-    Reference ref = storage.ref().child('videos/final');
-
-    // List all items (videos) in the directory
-    ListResult result = await ref.listAll();
-    List<Reference> allVideos = result.items;
-
-    if (allVideos.isEmpty) {
-      throw Exception('No videos found in the "videos/final" directory.');
-    }
-
-    // Pick a random video from the list
-    Random random = Random();
-    int randomIndex = random.nextInt(allVideos.length);
-    Reference randomVideoRef = allVideos[randomIndex];
-
-    // Get the download URL for the selected video
-    String videoUrl = await randomVideoRef.getDownloadURL();
-    return videoUrl;
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  static const List<Widget> _widgetOptions = <Widget>[
-    // Your actual pages or widgets go here. I'm using placeholders for now.
-    Text('Home Page', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-    Text('Communities', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-    Text('Add Content', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-    Text('Notifications', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-    Text('Profile', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -152,43 +118,14 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          _isInitialized && _controller.value.isInitialized
-              ? Positioned.fill(
-            child: AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: VideoPlayer(_controller),
-            ),
-          )
-              : Center(
-            child: CircularProgressIndicator(),
-          ),
-          Positioned(
-            bottom: 20,
-            left: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Storytime Adventures',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Explore the exciting world of chemistry with hands-on experiments. #smart #educational',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : PageView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: videoUrls.length,
+        itemBuilder: (context, index) {
+          return VideoPlayerWidget(videoUrl: videoUrls[index]);
+        },
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -220,6 +157,83 @@ class _HomePageState extends State<HomePage> {
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed, // Ensures all items are visible and clickable
       ),
+    );
+  }
+}
+
+class VideoPlayerWidget extends StatefulWidget {
+  final String videoUrl;
+
+  VideoPlayerWidget({required this.videoUrl});
+
+  @override
+  _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(
+      Uri.parse(widget.videoUrl),
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
+
+    _controller.initialize().then((_) {
+      setState(() {
+        _isInitialized = true;
+      });
+      _controller.setLooping(true);
+      _controller.play();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _isInitialized && _controller.value.isInitialized
+            ? Positioned.fill(
+          child: AspectRatio(
+            aspectRatio: _controller.value.aspectRatio,
+            child: VideoPlayer(_controller),
+          ),
+        )
+            : Center(child: CircularProgressIndicator()),
+        Positioned(
+          bottom: 20,
+          left: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Storytime Adventures',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Explore the exciting world of chemistry with hands-on experiments. #smart #educational',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
